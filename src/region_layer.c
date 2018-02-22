@@ -19,7 +19,7 @@ layer make_region_layer(int batch, int w, int h, int n, int classes, int coords)
     l.batch = batch;
     l.h = h;
     l.w = w;
-    l.c = n*(classes + coords + 1);
+    l.c = n*(classes + coords + 1);// *
     l.out_w = l.w;
     l.out_h = l.h;
     l.out_c = l.c;
@@ -28,9 +28,9 @@ layer make_region_layer(int batch, int w, int h, int n, int classes, int coords)
     l.cost = calloc(1, sizeof(float));
     l.biases = calloc(n*2, sizeof(float));
     l.bias_updates = calloc(n*2, sizeof(float));
-    l.outputs = h*w*n*(classes + coords + 1);
+    l.outputs = h*w*n*(classes + coords + 1); // *
     l.inputs = l.outputs;
-    l.truths = 30*(l.coords + 1);
+    l.truths = 30*(l.coords + 1); // *
     l.delta = calloc(batch*l.outputs, sizeof(float));
     l.output = calloc(batch*l.outputs, sizeof(float));
     int i;
@@ -47,7 +47,7 @@ layer make_region_layer(int batch, int w, int h, int n, int classes, int coords)
     l.delta_gpu = cuda_make_array(l.delta, batch*l.outputs);
 #endif
 
-    fprintf(stderr, "detection\n");
+    fprintf(stderr, "detection(region))\n");
     srand(0);
 
     return l;

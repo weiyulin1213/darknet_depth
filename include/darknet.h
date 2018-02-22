@@ -125,14 +125,20 @@ struct layer{
     int batch;
     int forced;
     int flipped;
+	// numer of input elements
     int inputs;
+	// number of output elements
     int outputs;
     int nweights;
     int nbiases;
     int extra;
+	// ?
     int truths;
+	// input height, width, channel
     int h,w,c;
+	// output dimension
     int out_h, out_w, out_c;
+	// number of boxes for one cell
     int n;
     int max_boxes;
     int groups;
@@ -150,6 +156,7 @@ struct layer{
     int xnor;
     int steps;
     int hidden;
+	// ?
     int truth;
     float smooth;
     float dot;
@@ -161,7 +168,9 @@ struct layer{
     float ratio;
     float learning_rate_scale;
     int softmax;
+	// number of classes in dataset
     int classes;
+	// coordinate representation, Default: 4:x, y, w, h
     int coords;
     int background;
     int rescore;
@@ -227,6 +236,7 @@ struct layer{
     float * weight_updates;
 
     float * delta;
+	// forward result
     float * output;
     float * squared;
     float * norms;
@@ -419,6 +429,7 @@ typedef struct network{
     size_t *seen;
     int *t;
     float epoch;
+	// 設定要load幾倍的batch size
     int subdivisions;
     layer *layers;
     float *output;
@@ -524,6 +535,7 @@ typedef struct load_args{
     int threads;
     char **paths;
     char *path;
+	// batch_size * subdivisions * ngpus
     int n;
     int m;
     char **labels;
