@@ -201,6 +201,7 @@ void forward_network(network *netp)
         net.input = l.output;
         if(l.truth) {
             net.truth = l.output;
+			fprintf(stderr, "Truth layer!\n");
         }
     }
     calc_network_cost(netp);
@@ -720,6 +721,7 @@ void forward_network_gpu(network *netp)
     }
 
     int i;
+	fprintf(stderr, "Foward GPU.\n");
     for(i = 0; i < net.n; ++i){
         net.index = i;
         layer l = net.layers[i];
@@ -732,6 +734,7 @@ void forward_network_gpu(network *netp)
         if(l.truth) {
             net.truth_gpu = l.output_gpu;
             net.truth = l.output;
+			fprintf(stderr, "Truth layer!\n");
         }
     }
     pull_network_output(netp);

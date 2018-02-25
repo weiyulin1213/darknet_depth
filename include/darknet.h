@@ -156,7 +156,7 @@ struct layer{
     int xnor;
     int steps;
     int hidden;
-	// ?
+	// boolean to label this layer as ground truth
     int truth;
     float smooth;
     float dot;
@@ -426,6 +426,7 @@ typedef enum {
 typedef struct network{
     int n;
     int batch;
+	// ?
     size_t *seen;
     int *t;
     float epoch;
@@ -474,7 +475,9 @@ typedef struct network{
     int gpu_index;
     tree *hierarchy;
 
+	// input data
     float *input;
+	// ground truth
     float *truth;
     float *delta;
     float *workspace;
@@ -567,7 +570,7 @@ typedef struct load_args{
 
 typedef struct{
     int id;
-    float x,y,w,h;
+    float x,y,w,h,depth;
     float left, right, top, bottom;
 } box_label;
 
