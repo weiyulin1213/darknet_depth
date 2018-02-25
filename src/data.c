@@ -139,12 +139,12 @@ box_label *read_boxes(char *filename, int *n)
 {
     FILE *file = fopen(filename, "r");
     if(!file) file_error(filename);
-    float x, y, h, w;
+    float x, y, h, w, depth;
     int id;
     int count = 0;
     int size = 64;
     box_label *boxes = calloc(size, sizeof(box_label));
-    while(fscanf(file, "%d %f %f %f %f", &id, &x, &y, &w, &h) == 5){
+    while(fscanf(file, "%d %f %f %f %f %f", &id, &x, &y, &w, &h, &depth) == 6){
         if(count == size) {
             size = size * 2;
             boxes = realloc(boxes, size*sizeof(box_label));
@@ -154,6 +154,7 @@ box_label *read_boxes(char *filename, int *n)
         boxes[count].y = y;
         boxes[count].h = h;
         boxes[count].w = w;
+		boxes[count].depth = depth;
         boxes[count].left   = x - w/2;
         boxes[count].right  = x + w/2;
         boxes[count].top    = y - h/2;
@@ -421,7 +422,7 @@ void fill_truth_detection(char *path, int num_boxes, float *truth, int classes, 
     randomize_boxes(boxes, count);
     correct_boxes(boxes, count, dx, dy, sx, sy, flip);
     if(count > num_boxes) count = num_boxes;
-    float x,y,w,h;
+    float x,y,w,h,depth;
     int id;
     int i;
 
@@ -431,14 +432,16 @@ void fill_truth_detection(char *path, int num_boxes, float *truth, int classes, 
         w =  boxes[i].w;
         h =  boxes[i].h;
         id = boxes[i].id;
+		depth = boxes[i].depth;
 
         if ((w < .001 || h < .001)) continue;
 
-        truth[i*5+0] = x;
-        truth[i*5+1] = y;
-        truth[i*5+2] = w;
-        truth[i*5+3] = h;
-        truth[i*5+4] = id;
+        truth[i*6+0] = x;
+        truth[i*6+1] = y;
+        truth[i*6+2] = w;
+        truth[i*6+3] = h;
+        truth[i*6+4] = id;
+        truth[i*6+5] = depth;
     }
     free(boxes);
 }
