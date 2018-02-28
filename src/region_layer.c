@@ -30,7 +30,7 @@ layer make_region_layer(int batch, int w, int h, int n, int classes, int coords)
     l.bias_updates = calloc(n*2, sizeof(float));
     l.outputs = h*w*n*(classes + coords + 2); // *
     l.inputs = l.outputs;
-    l.truths = 60*(l.coords + 2); // *
+    l.truths = 30*(l.coords + 2); // *
     l.delta = calloc(batch*l.outputs, sizeof(float));
     l.output = calloc(batch*l.outputs, sizeof(float));
     int i;
