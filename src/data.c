@@ -46,6 +46,7 @@ char **get_random_paths(char **paths, int n, int m)
     pthread_mutex_lock(&mutex);
     for(i = 0; i < n; ++i){
         int index = rand()%m;
+		//int index = i;
         random_paths[i] = paths[index];
         //if(i == 0) printf("%s\n", paths[index]);
     }
@@ -160,6 +161,7 @@ box_label *read_boxes(char *filename, int *n)
         boxes[count].top    = y - h/2;
         boxes[count].bottom = y + h/2;
         ++count;
+		//fprintf(stderr, "%f ", depth);
     }
     fclose(file);
     *n = count;
@@ -955,7 +957,7 @@ data load_data_detection(int n, char **paths, int m, int w, int h, int boxes, in
     d.X.vals = calloc(d.X.rows, sizeof(float*));
     d.X.cols = h*w*3;
 
-    d.y = make_matrix(n, 5*boxes);
+    d.y = make_matrix(n, 6*boxes); // TODO done
     for(i = 0; i < n; ++i){
         image orig = load_image_color(random_paths[i], 0, 0);
         image sized = make_image(w, h, orig.c);

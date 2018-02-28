@@ -287,10 +287,15 @@ float train_network_datum(network *net)
 {
     *net->seen += net->batch;
     net->train = 1;
+	fprintf(stderr, "train network datum start\n");
     forward_network(net);
+	fprintf(stderr, "train network datum forward done\n");
     backward_network(net);
+	fprintf(stderr, "train network datum backward done\n");
     float error = *net->cost;
+	fprintf(stderr, "train network datum update start\n");
     if(((*net->seen)/net->batch)%net->subdivisions == 0) update_network(net);
+	fprintf(stderr, "train network datum update done\n");
     return error;
 }
 
@@ -317,7 +322,9 @@ float train_network(network *net, data d)
     int i;
     float sum = 0;
     for(i = 0; i < n; ++i){
+		fprintf(stderr, "get next batch start\n");
         get_next_batch(d, batch, i*batch, net->input, net->truth);
+		fprintf(stderr, "get next batch done\n");
         float err = train_network_datum(net);
         sum += err;
     }
@@ -721,7 +728,6 @@ void forward_network_gpu(network *netp)
     }
 
     int i;
-	fprintf(stderr, "Foward GPU.\n");
     for(i = 0; i < net.n; ++i){
         net.index = i;
         layer l = net.layers[i];

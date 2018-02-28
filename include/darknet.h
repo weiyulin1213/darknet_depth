@@ -188,6 +188,7 @@ struct layer{
 
     float coord_scale;
     float object_scale;
+	float depth_scale;
     float noobject_scale;
     float mask_scale;
     float class_scale;
@@ -425,12 +426,14 @@ typedef enum {
 
 typedef struct network{
     int n;
+	// batch size
     int batch;
-	// ?
+	// how many images has been seen
     size_t *seen;
     int *t;
     float epoch;
-	// 設定要load幾倍的batch size
+	// divide batch into how may sub-batch
+	// Ex. in .cfg batch=64 and subdivisions=8, then net->batch=8 
     int subdivisions;
     layer *layers;
     float *output;

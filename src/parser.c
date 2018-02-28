@@ -296,6 +296,7 @@ layer parse_region(list *options, size_params params)
 
     l.coord_scale = option_find_float(options, "coord_scale", 1);
     l.object_scale = option_find_float(options, "object_scale", 1);
+    l.depth_scale = option_find_float(options, "depth_scale", 1);
     l.noobject_scale = option_find_float(options, "noobject_scale", 1);
     l.mask_scale = option_find_float(options, "mask_scale", 1);
     l.class_scale = option_find_float(options, "class_scale", 1);
@@ -554,8 +555,11 @@ void parse_net_options(list *options, network *net)
     int subdivs = option_find_int(options, "subdivisions",1);
     net->time_steps = option_find_int_quiet(options, "time_steps",1);
     net->notruth = option_find_int_quiet(options, "notruth",0);
+	// ------------------ amazing -----------------------
     net->batch /= subdivs;
+	// ------------------ amazing -----------------------
     net->batch *= net->time_steps;
+	// ------------------ amazing -----------------------
     net->subdivisions = subdivs;
     net->random = option_find_int_quiet(options, "random", 0);
 
@@ -649,6 +653,9 @@ network *parse_network_cfg(char *filename)
     params.w = net->w;
     params.c = net->c;
     params.inputs = net->inputs;
+	//fprintf(stderr, "%d\n", net->batch);
+	// when batch in .cfg is 64 and subdivision in cfg is 8
+	// net->batch will be 8!!!!!
     params.batch = net->batch;
     params.time_steps = net->time_steps;
     params.net = net;
@@ -747,6 +754,8 @@ network *parse_network_cfg(char *filename)
     net->output = out.output;
     net->input = calloc(net->inputs*net->batch, sizeof(float));
     net->truth = calloc(net->truths*net->batch, sizeof(float));
+	fprintf(stderr, "parser.c: parse_network_cfg: (out.outputs: %d, out.type: %d)\n", out.outputs, out.type);
+	fprintf(stderr, "parser.c: parse_network_cfg: (net->truths: %d, net->batch: %d)\n", net->truths, net->batch);
 #ifdef GPU
     net->output_gpu = out.output_gpu;
     net->input_gpu = cuda_make_array(net->input, net->inputs*net->batch);
@@ -954,6 +963,7 @@ void save_weights_upto(network *net, char *filename, int cutoff)
         }
     }
     fclose(fp);
+    fprintf(stderr, "Saving weights: %s done.\n", filename);
 }
 void save_weights(network *net, char *filename)
 {
