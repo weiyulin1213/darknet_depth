@@ -49,6 +49,10 @@ float dist_array(float *a, float *b, int n, int sub);
 float **one_hot_encode(float *a, int n, int k);
 float sec(clock_t clocks);
 void print_statistics(float *a, int n);
+// self added for darnet depth
+char *float2str(float depth, int afterpoint);
+int int2str(int ipart, char *str, int d);
+void reverse(char *str, int len);
 
 #endif
 

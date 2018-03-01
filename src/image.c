@@ -239,10 +239,10 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
 {
     int i,j;
 
-    for(i = 0; i < num; ++i){
+    for(i = 0; i < num; ++i){// for every box
         char labelstr[4096] = {0};
         int class = -1;
-        for(j = 0; j < classes; ++j){
+        for(j = 0; j < classes; ++j){ // every class map in one box
             if (probs[i][j] > thresh){
                 if (class < 0) {
                     strcat(labelstr, names[j]);
@@ -251,11 +251,13 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
                     strcat(labelstr, ", ");
                     strcat(labelstr, names[j]);
                 }
-                printf("%s: %.0f%%\n", names[j], probs[i][j]*100);
+                printf("%s: %.0f%% depth: %f\n", names[j], probs[i][j]*100, probs[i][classes+1]);
             }
         }
         if(class >= 0){
             int width = im.h * .006;
+
+			float depth = probs[i][classes+1];
 
             /*
                if(0){
@@ -290,9 +292,13 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
 
             draw_box_width(im, left, top, right, bot, width, red, green, blue);
             if (alphabet) {
+				char *depthstr = float2str(depth, 3);
+				strcat(labelstr, " depth:");
+				strcat(labelstr, depthstr);
                 image label = get_label(alphabet, labelstr, (im.h*.03)/10);
                 draw_label(im, top + width, left, label, rgb);
                 free_image(label);
+				free(depthstr);
             }
             if (masks){
                 image mask = float_to_image(14, 14, 1, masks[i]);

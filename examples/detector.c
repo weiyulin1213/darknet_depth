@@ -52,7 +52,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     args.d = &buffer;
     args.type = DETECTION_DATA;
     //args.type = INSTANCE_DATA;
-    args.threads = 1;
+    args.threads = 32;
 
     pthread_t load_thread = load_data(args);
     double time;
@@ -79,9 +79,9 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             net = nets[0];
         }
         time=what_time_is_it_now();
+        load_thread = load_data(args);
         pthread_join(load_thread, 0);
         train = buffer;
-        load_thread = load_data(args);
 
         /*
         int k;
@@ -596,8 +596,9 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         layer l = net->layers[net->n-1];
 
         box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
+		// total box number
         float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
-        for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(l.classes + 1, sizeof(float *));
+        for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(l.classes + 2, sizeof(float)); // TODO +1 modified to +2, originally, last one is max prob (see get_region_boxes for detail)
         float **masks = 0;
         if (l.coords > 4){
             masks = calloc(l.w*l.h*l.n, sizeof(float*));

@@ -409,10 +409,10 @@ void get_region_boxes(layer l, int w, int h, int netw, int neth, float thresh, f
             l.output[i] = (l.output[i] + flip[i])/2.;
         }
     }
-    for (i = 0; i < l.w*l.h; ++i){
+    for (i = 0; i < l.w*l.h; ++i){ // for every cell in predictions
         int row = i / l.w;
         int col = i % l.w;
-        for(n = 0; n < l.n; ++n){
+        for(n = 0; n < l.n; ++n){ // for every box in one cell
             int index = n*l.w*l.h + i;
             for(j = 0; j < l.classes; ++j){
                 probs[index][j] = 0;
@@ -463,6 +463,12 @@ void get_region_boxes(layer l, int w, int h, int netw, int neth, float thresh, f
                 }
                 probs[index][l.classes] = max;
             }
+
+			// put predicted depth of each box at the last element of prob[index] array
+			int depth_index = entry_index(l, 0, n*l.w*l.h + i, l.coords + 1);
+			float pred_depth = predictions[depth_index];
+			probs[index][l.classes + 1] = pred_depth;
+
             if(only_objectness){
                 probs[index][0] = scale;
             }
