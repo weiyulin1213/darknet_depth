@@ -53,6 +53,7 @@ void print_statistics(float *a, int n);
 char *float2str(float depth, int afterpoint);
 int int2str(int ipart, char *str, int d);
 void reverse(char *str, int len);
+void write_detections(char *filename, int num, float thresh, box *boxes, float **probs, char **names, int classes);
 
 #endif
 

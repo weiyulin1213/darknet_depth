@@ -1,4 +1,5 @@
 #include "darknet.h"
+#include "utils.h"
 
 static int coco_ids[] = {1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,20,21,22,23,24,25,27,28,31,32,33,34,35,36,37,38,39,40,41,42,43,44,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,67,70,72,73,74,75,76,77,78,79,80,81,82,84,85,86,87,88,89,90};
 
@@ -280,7 +281,7 @@ void validate_detector_flip(char *datacfg, char *cfgfile, char *weightfile, char
 
     box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
     float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
-    for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(classes+1, sizeof(float *));
+    for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(classes+2, sizeof(float));
 
     int m = plist->size;
     int i=0;
@@ -413,7 +414,7 @@ void validate_detector(char *datacfg, char *cfgfile, char *weightfile, char *out
 
     box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
     float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
-    for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(classes+1, sizeof(float *));
+    for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(classes+2, sizeof(float));
 
     int m = plist->size;
     int i=0;
@@ -503,7 +504,7 @@ void validate_detector_recall(char *cfgfile, char *weightfile)
     int j, k;
     box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
     float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
-    for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(classes+1, sizeof(float *));
+    for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(classes+2, sizeof(float));
 
     int m = plist->size;
     int i=0;
@@ -577,9 +578,18 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
     char *input = buff;
     int j;
     float nms=.3;
+	list *plist=NULL;
+	char **paths=NULL;
     while(1){
         if(filename){
-            strncpy(input, filename, 256);
+			if(strstr(filename, ".txt")==NULL)
+	            strncpy(input, filename, 256);
+			else{
+				printf("Read filenames from file: %s\n", filename);
+			    plist = get_paths(filename);
+    			paths = (char **)list_to_array(plist);
+				printf("Total images: %d\n", plist->size);
+			}
         } else {
             printf("Enter Image Path: ");
             fflush(stdout);
@@ -587,14 +597,8 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
             if(!input) return;
             strtok(input, "\n");
         }
-        image im = load_image_color(input,0,0);
-        image sized = letterbox_image(im, net->w, net->h);
-        //image sized = resize_image(im, net->w, net->h);
-        //image sized2 = resize_max(im, net->w);
-        //image sized = crop_image(sized2, -((net->w - sized2.w)/2), -((net->h - sized2.h)/2), net->w, net->h);
-        //resize_network(net, sized.w, sized.h);
-        layer l = net->layers[net->n-1];
 
+		layer l = net->layers[net->n-1];
         box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
 		// total box number
         float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
@@ -605,32 +609,55 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
             for(j = 0; j < l.w*l.h*l.n; ++j) masks[j] = calloc(l.coords-4, sizeof(float *));
         }
 
-        float *X = sized.data;
-        time=what_time_is_it_now();
-        network_predict(net, X);
-        printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
-        get_region_boxes(l, im.w, im.h, net->w, net->h, thresh, probs, boxes, masks, 0, 0, hier_thresh, 1);
-        //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-        if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-        draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes);
-        if(outfile){
-            save_image(im, outfile);
-        }
-        else{
-            save_image(im, "predictions");
-#ifdef OPENCV
-            cvNamedWindow("predictions", CV_WINDOW_NORMAL); 
-            if(fullscreen){
-                cvSetWindowProperty("predictions", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-            }
-            show_image(im, "predictions");
-            cvWaitKey(0);
-            cvDestroyAllWindows();
-#endif
-        }
+		int processed=0;
+		image im, sized;
+		do{
+			if(plist){
+				im = load_image_color(paths[processed],0,0);
+				sized = letterbox_image(im, net->w, net->h);
+			}
+			else{
+				im = load_image_color(input,0,0);
+				sized = letterbox_image(im, net->w, net->h);
+			}
 
-        free_image(im);
-        free_image(sized);
+			float *X = sized.data;
+			time=what_time_is_it_now();
+			network_predict(net, X);
+			if(plist)
+				printf("%s: Predicted in %f seconds.\n", paths[processed], what_time_is_it_now()-time);
+			else
+				printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
+			get_region_boxes(l, im.w, im.h, net->w, net->h, thresh, probs, boxes, masks, 0, 0, hier_thresh, 1);
+			//if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+			if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+			if(plist)
+				write_detections(paths[processed], l.w*l.h*l.n, thresh, boxes, probs, names, l.classes);
+			else
+				draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes);
+			processed++;
+        	free_image(im);
+        	free_image(sized);
+		}while(plist!=NULL && processed < plist->size);
+
+		if(plist){
+			if(outfile){
+				save_image(im, outfile);
+			}
+			else{
+				save_image(im, "predictions");
+#ifdef OPENCV
+				cvNamedWindow("predictions", CV_WINDOW_NORMAL); 
+				if(fullscreen){
+					cvSetWindowProperty("predictions", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+				}
+				show_image(im, "predictions");
+				cvWaitKey(0);
+				cvDestroyAllWindows();
+#endif
+			}
+		}
+
         free(boxes);
         free_ptrs((void **)probs, l.w*l.h*l.n);
         if (filename) break;

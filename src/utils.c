@@ -748,3 +748,56 @@ char *float2str(float depth, int afterpoint){
 	}
 	return depthstr;
 }
+
+void write_detections(char *filename, int num, float thresh, box *boxes, float **probs, char **names, int classes)
+{
+    int i,j;
+	char outpath[4096]={0};
+	find_replace(filename, ".jpg", ".result", outpath);
+	find_replace(outpath, ".png", ".result", outpath);
+	find_replace(outpath, ".JPG", ".result", outpath);
+	find_replace(outpath, ".JPEG", ".result", outpath);
+	FILE *fp=fopen(outpath, "w+");// create and truncate
+	fclose(fp);
+
+    for(i = 0; i < num; ++i){// for every box
+        char labelstr[4096] = {0};
+        int class = -1;
+        for(j = 0; j < classes; ++j){ // every class map in one box
+            if (probs[i][j] > thresh){
+                if (class < 0) {
+                    strcat(labelstr, names[j]);
+                    class = j;
+                } else {
+                    strcat(labelstr, ", ");
+                    strcat(labelstr, names[j]);
+                }
+                printf("%s: %.0f%% depth: %f\n", names[j], probs[i][j]*100, probs[i][classes+1]);
+            }
+        }
+        if(class >= 0){
+
+			float depth = probs[i][classes+1];
+			
+			box b=boxes[i];
+
+            //int left  = (b.x-b.w/2.)*im.w;
+            //int right = (b.x+b.w/2.)*im.w;
+            //int top   = (b.y-b.h/2.)*im.h;
+            //int bot   = (b.y+b.h/2.)*im.h;
+
+            //if(left < 0) left = 0;
+            //if(right > im.w-1) right = im.w-1;
+            //if(top < 0) top = 0;
+            //if(bot > im.h-1) bot = im.h-1;
+
+			FILE *fp=fopen(outpath, "a");
+			if(fp==NULL){
+				fprintf(stderr, "Error opening file.\n");
+				exit(1);
+			}
+			fprintf(fp, "%d %f %f %f %f %f\n", class, b.x, b.y, b.w, b.h, depth);
+			fclose(fp);
+        }
+    }
+}
