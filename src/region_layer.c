@@ -325,7 +325,10 @@ void forward_region_layer(const layer l, network net)
 			// ------------------- depth loss --------------------
 			float true_depth = net.truth[t*(l.coords + 2) + b*l.truths + l.coords + 1];
 			int depth_index = entry_index(l, b, best_n*l.w*l.h + j*l.w + i, l.coords + 1);
-			l.delta[depth_index] = l.depth_scale * (true_depth - l.output[depth_index]);
+			if(true_depth==-1)// means depth not available
+				l.delta[depth_index] = 0;
+			else
+				l.delta[depth_index] = l.depth_scale * (true_depth - l.output[depth_index]);
 
 			// ------------------- class loss --------------------
             int class = net.truth[t*(l.coords + 2) + b*l.truths + l.coords]; //  TODO done
