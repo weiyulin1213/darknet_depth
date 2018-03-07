@@ -257,14 +257,14 @@ void forward_region_layer(const layer l, network net)
                         l.delta[obj_index] = 0;
                     }
 
-                    /*if(*(net.seen) < 12800){ // ?
+                    if(*(net.seen) < 12800){ // ?
                         box truth = {0};
                         truth.x = (i + .5)/l.w;
                         truth.y = (j + .5)/l.h;
                         truth.w = l.biases[2*n]/l.w;
                         truth.h = l.biases[2*n+1]/l.h;
                         delta_region_box(truth, l.output, l.biases, n, box_index, i, j, l.w, l.h, l.delta, .01, l.w*l.h);
-                    }*/
+                    }
                 }
             }
         }
@@ -589,12 +589,12 @@ void forward_region_layer_gpu(const layer l, network net)
     //cuda_push_array(l.output_gpu, l.output, l.batch*l.outputs);
     if(!net.train) return;
     cuda_push_array(l.delta_gpu, l.delta, l.batch*l.outputs);
-	fprintf(stderr, "Forward region GPU done.\n");
+	//fprintf(stderr, "Forward region GPU done.\n");
 }
 
 void backward_region_layer_gpu(const layer l, network net)
 {
-	fprintf(stderr, "Backward region GPU starts.\n");
+	//fprintf(stderr, "Backward region GPU starts.\n");
     int b, n;
     for (b = 0; b < l.batch; ++b){
         for(n = 0; n < l.n; ++n){
@@ -609,7 +609,7 @@ void backward_region_layer_gpu(const layer l, network net)
         }
     }
     axpy_gpu(l.batch*l.inputs, 1, l.delta_gpu, 1, net.delta_gpu, 1);
-	fprintf(stderr, "Backward region GPU done.\n");
+	//fprintf(stderr, "Backward region GPU done.\n");
 }
 #endif
 
