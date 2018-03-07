@@ -257,14 +257,14 @@ void forward_region_layer(const layer l, network net)
                         l.delta[obj_index] = 0;
                     }
 
-                    if(*(net.seen) < 12800){ // ?
+                    /*if(*(net.seen) < 12800){ // ?
                         box truth = {0};
                         truth.x = (i + .5)/l.w;
                         truth.y = (j + .5)/l.h;
                         truth.w = l.biases[2*n]/l.w;
                         truth.h = l.biases[2*n+1]/l.h;
                         delta_region_box(truth, l.output, l.biases, n, box_index, i, j, l.w, l.h, l.delta, .01, l.w*l.h);
-                    }
+                    }*/
                 }
             }
         }

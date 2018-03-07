@@ -292,6 +292,7 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
 
             draw_box_width(im, left, top, right, bot, width, red, green, blue);
             if (alphabet) {
+				if(depth<0.001) depth=0;
 				char *depthstr = float2str(depth, 3);
 				strcat(labelstr, " depth:");
 				strcat(labelstr, depthstr);
@@ -1441,7 +1442,8 @@ image load_image_stb(char *filename, int channels)
 image load_image(char *filename, int w, int h, int c)
 {
 #ifdef OPENCV
-    image out = load_image_cv(filename, c);
+	image out = load_image_cv(filename, c);
+    //image out = load_image_stb(filename, c);
 #else
     image out = load_image_stb(filename, c);
 #endif

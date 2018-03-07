@@ -8,6 +8,7 @@
 #include "image.h"
 #include "demo.h"
 #include <sys/time.h>
+#include <unistd.h>
 
 #define DEMO 1
 
@@ -115,8 +116,93 @@ void *detect_loop(void *ptr)
     }
 }
 
+/*void demo_from_file(char *filename, char *cfgfile, char *weightfile, float thresh, char **names, int classes, int delay, float hier, int w, int h){
+
+    image **alphabet = load_alphabet();
+    demo_names = names;
+    demo_alphabet = alphabet;
+    demo_classes = classes;
+    demo_thresh = thresh;
+    demo_hier = hier;
+    printf("Demo\n");
+    net = load_network(cfgfile, weightfile, 0);
+    set_batch_network(net, 1);
+
+    srand(2222222);
+
+    if(filename){
+        printf("read from file: %s\n", filename);
+		list *plist=get_path(filename);
+		char **paths=(char**)list_to_array(plist);
+	}
+
+    layer l = net->layers[net->n-1];
+    demo_detections = l.n*l.w*l.h;
+    int j;
+
+    avg = (float *) calloc(l.outputs, sizeof(float));
+	float **predictions=(float**)calloc(1, sizeof(float*));
+    predictions[0] = (float *) calloc(l.outputs, sizeof(float));
+
+    boxes = (box *)calloc(l.w*l.h*l.n, sizeof(box));
+    probs = (float **)calloc(l.w*l.h*l.n, sizeof(float *));
+    for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = (float *)calloc(l.classes+2, sizeof(float));
+
+    buff[0] = get_image_from_stream(cap);
+    buff[1] = copy_image(buff[0]);
+    buff[2] = copy_image(buff[0]);
+    buff_letter[0] = letterbox_image(buff[0], net->w, net->h);
+    buff_letter[1] = letterbox_image(buff[0], net->w, net->h);
+    buff_letter[2] = letterbox_image(buff[0], net->w, net->h);
+    ipl = cvCreateImage(cvSize(buff[0].w,buff[0].h), IPL_DEPTH_8U, buff[0].c);
+
+	CvVideoWriter *writer;
+	char AviFileName[]="Output.avi";
+    //int AviForamt = -1;
+    int FPS = 30;
+    CvSize AviSize = cvSize(buff[0].w,buff[0].h);
+    int AviColor = 1;
+    writer=cvCreateVideoWriter(AviFileName,CV_FOURCC('M', 'J', 'P', 'G'),FPS,AviSize,AviColor);
+	if(writer==NULL) printf("Fail to create video wirter.\n");
+	else printf("Video writer success.\n");
+
+    int count = 0;
+    if(!prefix){
+        cvNamedWindow("Demo", CV_WINDOW_NORMAL); 
+        if(fullscreen){
+            cvSetWindowProperty("Demo", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+        } else {
+            cvMoveWindow("Demo", 0, 0);
+            cvResizeWindow("Demo", 1352, 1013);
+        }
+    }
+
+    demo_time = what_time_is_it_now();
+
+    while(count<plist->size){
+        if(pthread_create(&fetch_thread, 0, fetch_in_thread, 0)) error("Thread creation failed");
+        if(pthread_create(&detect_thread, 0, detect_in_thread, 0)) error("Thread creation failed");
+
+		usleep(30000);
+
+        fps = 1./(what_time_is_it_now() - demo_time);
+        demo_time = what_time_is_it_now();
+        display_in_thread(0);
+		cvWriteFrame(writer, ipl);
+
+        pthread_join(fetch_thread, 0);
+        pthread_join(detect_thread, 0);
+        ++count;
+    }
+	cvReleaseVideoWriter(&writer);
+}*/
+
 void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const char *filename, char **names, int classes, int delay, char *prefix, int avg_frames, float hier, int w, int h, int frames, int fullscreen)
 {
+	//if(filename && strstr(filename, ".txt")!=NULL){
+	//	demo_fromfile(filename, cfgfile, weightfile, thresh, names, classes, delay, hier, w, h);
+	//	return ;
+	//}
     demo_frame = avg_frames;
     predictions = calloc(demo_frame, sizeof(float*));
     image **alphabet = load_alphabet();
@@ -134,7 +220,7 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
     srand(2222222);
 
     if(filename){
-        printf("video file: %s\n", filename);
+		printf("video file: %s\n", filename);
         cap = cvCaptureFromFile(filename);
     }else{
         cap = cvCaptureFromCAM(cam_index);
@@ -161,7 +247,7 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
 
     boxes = (box *)calloc(l.w*l.h*l.n, sizeof(box));
     probs = (float **)calloc(l.w*l.h*l.n, sizeof(float *));
-    for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = (float *)calloc(l.classes+1, sizeof(float));
+    for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = (float *)calloc(l.classes+2, sizeof(float));
 
     buff[0] = get_image_from_stream(cap);
     buff[1] = copy_image(buff[0]);
@@ -170,6 +256,16 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
     buff_letter[1] = letterbox_image(buff[0], net->w, net->h);
     buff_letter[2] = letterbox_image(buff[0], net->w, net->h);
     ipl = cvCreateImage(cvSize(buff[0].w,buff[0].h), IPL_DEPTH_8U, buff[0].c);
+
+	CvVideoWriter *writer;
+	char AviFileName[]="Output.avi";
+    //int AviForamt = -1;
+    int FPS = 30;
+    CvSize AviSize = cvSize(buff[0].w,buff[0].h);
+    int AviColor = 1;
+    writer=cvCreateVideoWriter(AviFileName,CV_FOURCC('M', 'J', 'P', 'G'),FPS,AviSize,AviColor);
+	if(writer==NULL) printf("Fail to create video wirter.\n");
+	else printf("Video writer success.\n");
 
     int count = 0;
     if(!prefix){
@@ -188,10 +284,12 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
         buff_index = (buff_index + 1) %3;
         if(pthread_create(&fetch_thread, 0, fetch_in_thread, 0)) error("Thread creation failed");
         if(pthread_create(&detect_thread, 0, detect_in_thread, 0)) error("Thread creation failed");
+		usleep(10000);
         if(!prefix){
             fps = 1./(what_time_is_it_now() - demo_time);
             demo_time = what_time_is_it_now();
             display_in_thread(0);
+			cvWriteFrame(writer, ipl);
         }else{
             char name[256];
             sprintf(name, "%s_%08d", prefix, count);
@@ -201,6 +299,7 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
         pthread_join(detect_thread, 0);
         ++count;
     }
+	cvReleaseVideoWriter(&writer);
 }
 
 void demo_compare(char *cfg1, char *weight1, char *cfg2, char *weight2, float thresh, int cam_index, const char *filename, char **names, int classes, int delay, char *prefix, int avg_frames, float hier, int w, int h, int frames, int fullscreen)
@@ -259,6 +358,7 @@ void demo_compare(char *cfg1, char *weight1, char *cfg2, char *weight2, float th
     buff_letter[2] = letterbox_image(buff[0], net->w, net->h);
     ipl = cvCreateImage(cvSize(buff[0].w,buff[0].h), IPL_DEPTH_8U, buff[0].c);
 
+
     int count = 0;
     if(!prefix){
         cvNamedWindow("Demo", CV_WINDOW_NORMAL); 
@@ -279,7 +379,7 @@ void demo_compare(char *cfg1, char *weight1, char *cfg2, char *weight2, float th
         if(!prefix){
             fps = 1./(what_time_is_it_now() - demo_time);
             demo_time = what_time_is_it_now();
-            display_in_thread(0);
+			display_in_thread(0);
         }else{
             char name[256];
             sprintf(name, "%s_%08d", prefix, count);
