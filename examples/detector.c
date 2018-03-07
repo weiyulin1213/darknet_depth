@@ -1,5 +1,6 @@
 #include "darknet.h"
 #include "utils.h"
+#include <unistd.h>
 
 static int coco_ids[] = {1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,20,21,22,23,24,25,27,28,31,32,33,34,35,36,37,38,39,40,41,42,43,44,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,67,70,72,73,74,75,76,77,78,79,80,81,82,84,85,86,87,88,89,90};
 
@@ -53,9 +54,10 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     args.d = &buffer;
     args.type = DETECTION_DATA;
     //args.type = INSTANCE_DATA;
-    args.threads = 32;
+    args.threads = 1;
 
-    pthread_t load_thread = load_data(args);
+	pthread_t load_thread = load_data(args);
+	//pthread_t load_thread;
     double time;
     int count = 0;
     //while(i*imgs < N*120){
@@ -69,10 +71,10 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             args.w = dim;
             args.h = dim;
 
+            load_thread = load_data(args);
             pthread_join(load_thread, 0);
             train = buffer;
             free_data(train);
-            load_thread = load_data(args);
 
             for(i = 0; i < ngpus; ++i){
                 resize_network(nets[i], dim, dim);
@@ -80,9 +82,9 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             net = nets[0];
         }
         time=what_time_is_it_now();
-        load_thread = load_data(args);
         pthread_join(load_thread, 0);
         train = buffer;
+        load_thread = load_data(args);
 
         /*
         int k;
@@ -631,16 +633,18 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
 			get_region_boxes(l, im.w, im.h, net->w, net->h, thresh, probs, boxes, masks, 0, 0, hier_thresh, 1);
 			//if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
 			if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-			if(plist)
+			if(plist){
 				write_detections(paths[processed], l.w*l.h*l.n, thresh, boxes, probs, names, l.classes);
+        		free_image(im);
+        		free_image(sized);
+			}
 			else
 				draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes);
 			processed++;
-        	free_image(im);
-        	free_image(sized);
+			usleep(10000);
 		}while(plist!=NULL && processed < plist->size);
 
-		if(plist){
+		if(!plist){
 			if(outfile){
 				save_image(im, outfile);
 			}
@@ -656,6 +660,8 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
 				cvDestroyAllWindows();
 #endif
 			}
+        	free_image(im);
+        	free_image(sized);
 		}
 
         free(boxes);
