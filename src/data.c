@@ -443,7 +443,7 @@ void fill_truth_detection(char *path, int num_boxes, float *truth, int classes, 
         truth[i*6+2] = w;
         truth[i*6+3] = h;
         truth[i*6+4] = id;
-		if(!depth)
+		if(depth==0)
 			truth[i*6+5]=-1;
 		else
         	truth[i*6+5] = depth;
