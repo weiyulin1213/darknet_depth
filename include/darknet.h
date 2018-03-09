@@ -132,7 +132,7 @@ struct layer{
     int nweights;
     int nbiases;
     int extra;
-	// ?
+	// number of truth element
     int truths;
 	// input height, width, channel
     int h,w,c;
