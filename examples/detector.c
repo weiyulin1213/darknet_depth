@@ -54,7 +54,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     args.d = &buffer;
     args.type = DETECTION_DATA;
     //args.type = INSTANCE_DATA;
-    args.threads = 1;
+    args.threads = 16;
 
 	pthread_t load_thread = load_data(args);
 	//pthread_t load_thread;
@@ -641,7 +641,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
 			else
 				draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes);
 			processed++;
-			usleep(10000);
+			//usleep(10000);
 		}while(plist!=NULL && processed < plist->size);
 
 		if(!plist){
