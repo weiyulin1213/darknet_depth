@@ -184,7 +184,7 @@ void forward_region_layer(const layer l, network net)
         }
     } else if (l.softmax){
         int index = entry_index(l, 0, 0, l.coords + !l.background);// TODO DONE
-        softmax_cpu(net.input + index, l.classes + l.background, l.batch*l.n, l.inputs/l.n, l.w*l.h, 1, l.w*l.h, 1, l.output + index);
+        softmax_cpu(net.input + index, l.classes + l.background, l.batch*l.n, l.inputs/l.n - 1, l.w*l.h, 1, l.w*l.h, 1, l.output + index);
     }
 #endif
 
@@ -324,7 +324,7 @@ void forward_region_layer(const layer l, network net)
 
 			// ------------------- depth loss --------------------
 			float true_depth = net.truth[t*(l.coords + 2) + b*l.truths + l.coords + 1];
-			int depth_index = entry_index(l, b, best_n*l.w*l.h + j*l.w + i, l.c-(5-best_n));
+			int depth_index = entry_index(l, b, best_n*l.w*l.h + j*l.w + i, l.c-l.n-best_n*(l.coords+l.classes));
 			if(true_depth==-1)// means depth not available
 				l.delta[depth_index] = 0;
 			else
@@ -468,7 +468,7 @@ void get_region_boxes(layer l, int w, int h, int netw, int neth, float thresh, f
             }
 
 			// put predicted depth of each box at the last element of prob[index] array
-			int depth_index = entry_index(l, 0, n*l.w*l.h + i, l.c-(5-n));
+			int depth_index = entry_index(l, 0, n*l.w*l.h + i, (l.c-l.n)-n*(l.coords+l.classes));
 			float pred_depth = predictions[depth_index];
 			probs[index][l.classes + 1] = pred_depth;
 
@@ -503,81 +503,10 @@ void forward_region_layer_gpu(const layer l, network net)
     if (l.softmax_tree){
         int index = entry_index(l, 0, 0, l.coords + 1); // TODO
         softmax_tree(net.input_gpu + index, l.w*l.h, l.batch*l.n, l.inputs/l.n, 1, l.output_gpu + index, *l.softmax_tree);
-    /*
-        int mmin = 9000;
-        int mmax = 0;
-        int i;
-        for(i = 0; i < l.softmax_tree->groups; ++i){
-            int group_size = l.softmax_tree->group_size[i];
-            if (group_size < mmin) mmin = group_size;
-            if (group_size > mmax) mmax = group_size;
-        }
-        //printf("%d %d %d \n", l.softmax_tree->groups, mmin, mmax);
-        */
-        /*
-        // TIMING CODE
-        int zz;
-        int number = 1000;
-        int count = 0;
-        int i;
-        for (i = 0; i < l.softmax_tree->groups; ++i) {
-        int group_size = l.softmax_tree->group_size[i];
-        count += group_size;
-        }
-        printf("%d %d\n", l.softmax_tree->groups, count);
-        {
-        double then = what_time_is_it_now();
-        for(zz = 0; zz < number; ++zz){
-        int index = entry_index(l, 0, 0, 5);
-        softmax_tree(net.input_gpu + index, l.w*l.h, l.batch*l.n, l.inputs/l.n, 1, l.output_gpu + index, *l.softmax_tree);
-        }
-        cudaDeviceSynchronize();
-        printf("Good GPU Timing: %f\n", what_time_is_it_now() - then);
-        } 
-        {
-        double then = what_time_is_it_now();
-        for(zz = 0; zz < number; ++zz){
-        int i;
-        int count = 5;
-        for (i = 0; i < l.softmax_tree->groups; ++i) {
-        int group_size = l.softmax_tree->group_size[i];
-        int index = entry_index(l, 0, 0, count);
-        softmax_gpu(net.input_gpu + index, group_size, l.batch*l.n, l.inputs/l.n, l.w*l.h, 1, l.w*l.h, 1, l.output_gpu + index);
-        count += group_size;
-        }
-        }
-        cudaDeviceSynchronize();
-        printf("Bad GPU Timing: %f\n", what_time_is_it_now() - then);
-        }
-        {
-        double then = what_time_is_it_now();
-        for(zz = 0; zz < number; ++zz){
-        int i;
-        int count = 5;
-        for (i = 0; i < l.softmax_tree->groups; ++i) {
-        int group_size = l.softmax_tree->group_size[i];
-        softmax_cpu(net.input + count, group_size, l.batch, l.inputs, l.n*l.w*l.h, 1, l.n*l.w*l.h, l.temperature, l.output + count);
-        count += group_size;
-        }
-        }
-        cudaDeviceSynchronize();
-        printf("CPU Timing: %f\n", what_time_is_it_now() - then);
-        }
-         */
-        /*
-           int i;
-           int count = 5;
-           for (i = 0; i < l.softmax_tree->groups; ++i) {
-           int group_size = l.softmax_tree->group_size[i];
-           int index = entry_index(l, 0, 0, count);
-           softmax_gpu(net.input_gpu + index, group_size, l.batch*l.n, l.inputs/l.n, l.w*l.h, 1, l.w*l.h, 1, l.output_gpu + index);
-           count += group_size;
-           }
-         */
     } else if (l.softmax) {
         int index = entry_index(l, 0, 0, l.coords + !l.background); // TODO done
         //printf("%d\n", index);
-        softmax_gpu(net.input_gpu + index, l.classes + l.background, l.batch*l.n, l.inputs/l.n, l.w*l.h, 1, l.w*l.h, 1, l.output_gpu + index);
+        softmax_gpu(net.input_gpu + index, l.classes + l.background, l.batch*l.n, l.inputs/l.n - 1*l.w*l.h , l.w*l.h, 1, l.w*l.h, 1, l.output_gpu + index); // TODO
     }
     if(!net.train || l.onlyforward){
         cuda_pull_array(l.output_gpu, l.output, l.batch*l.outputs);

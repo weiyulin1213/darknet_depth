@@ -912,7 +912,9 @@ __global__ void softmax_kernel(float *input, int n, int batch, int batch_offset,
     if (id >= batch*groups) return;
     int b = id / groups;
     int g = id % groups;
-    softmax_device(input + b*batch_offset + g*group_offset, n, temp, stride, output + b*batch_offset + g*group_offset);
+	int offset=b/5;
+    softmax_device(input + b*batch_offset + offset*5*groups + g*group_offset, n, temp, stride, output + b*batch_offset + offset*5*groups + g*group_offset);
+    //softmax_device(input + b*batch_offset +  g*group_offset, n, temp, stride, output + b*batch_offset + g*group_offset);
 }
 
 extern "C" void softmax_gpu(float *input, int n, int batch, int batch_offset, int groups, int group_offset, int stride, float temp, float *output)
