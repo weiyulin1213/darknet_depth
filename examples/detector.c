@@ -610,6 +610,8 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
             masks = calloc(l.w*l.h*l.n, sizeof(float*));
             for(j = 0; j < l.w*l.h*l.n; ++j) masks[j] = calloc(l.coords-4, sizeof(float *));
         }
+		// depth map allocation
+		float *avg_depth=(float*)calloc(l.w*l.h, sizeof(float));
 
 		int processed=0;
 		image im, sized;
@@ -631,6 +633,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
 			else
 				printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
 			get_region_boxes(l, im.w, im.h, net->w, net->h, thresh, probs, boxes, masks, 0, 0, hier_thresh, 1);
+			//get_depth_map(l, probs, avg_depth);
 			//if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
 			if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
 			if(plist){
@@ -665,6 +668,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
 		}
 
         free(boxes);
+		free(avg_depth);
         free_ptrs((void **)probs, l.w*l.h*l.n);
         if (filename) break;
     }

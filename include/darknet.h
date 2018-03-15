@@ -741,6 +741,8 @@ void do_nms_obj(box *boxes, float **probs, int total, int classes, float thresh)
 
 matrix make_matrix(int rows, int cols);
 
+void get_depth_map(layer l, float **probs, float *avg_depth);
+
 #ifndef __cplusplus
 #ifdef OPENCV
 image get_image_from_stream(CvCapture *cap);
