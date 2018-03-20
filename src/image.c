@@ -251,7 +251,7 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
                     strcat(labelstr, ", ");
                     strcat(labelstr, names[j]);
                 }
-                printf("%s: %.0f%% depth: %f\n", names[j], probs[i][j]*100, probs[i][classes+1]);
+                printf("%s: %.0f%% depth: %.5f\n", names[j], probs[i][j]*100, probs[i][classes+1]);
             }
         }
         if(class >= 0){
@@ -293,7 +293,7 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
             draw_box_width(im, left, top, right, bot, width, red, green, blue);
             if (alphabet) {
 				if(depth<0.001) depth=0;
-				char *depthstr = float2str(depth, 3);
+				char *depthstr = float2str(depth, 2);
 				strcat(labelstr, " depth:");
 				strcat(labelstr, depthstr);
                 image label = get_label(alphabet, labelstr, (im.h*.03)/10);
