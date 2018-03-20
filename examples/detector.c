@@ -514,7 +514,8 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
     int m = plist->size;
     int i=0;
 
-    float thresh = .001;
+	//float thresh = .001;
+	float thresh = .1;
     float iou_thresh = .5;
     float nms = .4;
 
@@ -522,6 +523,9 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
     int correct = 0;
     int proposals = 0;
     float avg_iou = 0;
+    float avg_depth_err = 0;
+    float avg_depth_err_cap50 = 0;
+    float avg_depth_err_cap30 = 0;
 
     for(i = 0; i < m; ++i){
         char *path = paths[i];
@@ -537,11 +541,13 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
         find_replace(labelpath, "JPEGImages", "labels", labelpath);
         find_replace(labelpath, ".jpg", ".txt", labelpath);
         find_replace(labelpath, ".JPEG", ".txt", labelpath);
+        find_replace(labelpath, ".png", ".txt", labelpath);
+        find_replace(labelpath, ".PNG", ".txt", labelpath);
 
         int num_labels = 0;
         box_label *truth = read_boxes(labelpath, &num_labels);
         for(k = 0; k < l.w*l.h*l.n; ++k){
-            if(probs[k][0] > thresh){
+            if(probs[k][classes] > thresh){
                 ++proposals;
             }
         }
@@ -549,19 +555,30 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
             ++total;
             box t = {truth[j].x, truth[j].y, truth[j].w, truth[j].h};
             float best_iou = 0;
+			float best_depth_err=0;
+			float best_depth_err_cap50=0;
+			float best_depth_err_cap30=0;
             for(k = 0; k < l.w*l.h*l.n; ++k){
                 float iou = box_iou(boxes[k], t);
-                if(probs[k][0] > thresh && iou > best_iou){
+                if(probs[k][classes] > thresh && iou > best_iou){
                     best_iou = iou;
+					best_depth_err=pow(probs[k][classes+1]-truth[j].depth,2);
+					if(truth[j].depth>50) best_depth_err_cap50=pow((probs[k][classes+1]>50? 50:probs[k][classes+1]) - 50, 2);
+					else best_depth_err_cap50=best_depth_err;
+					if(truth[j].depth>30) best_depth_err_cap30=pow((probs[k][classes+1]>30? 30:probs[k][classes+1]) - 30, 2);
+					else best_depth_err_cap30=best_depth_err;
                 }
             }
             avg_iou += best_iou;
+			avg_depth_err+=best_depth_err;
+			avg_depth_err_cap50+=best_depth_err_cap50;
+			avg_depth_err_cap30+=best_depth_err_cap30;
             if(best_iou > iou_thresh){
                 ++correct;
             }
         }
 
-        fprintf(stderr, "%5d %5d %5d\tRPs/Img: %.2f\tIOU: %.2f%%\tRecall:%.2f%%\n", i, correct, total, (float)proposals/(i+1), avg_iou*100/total, 100.*correct/total);
+        fprintf(stderr, "%5d %5d %5d\tRPs/Img: %.2f\tIOU: %.2f%%\t Recall:%.2f%%\t Depth error:%.3f MSE, cap50:%.3f, cap30:%.3f\n", i, correct, total, (float)proposals/(i+1), avg_iou*100/total, 100.*correct/total, avg_depth_err/total, avg_depth_err_cap50/total, avg_depth_err_cap30/total);
         free(id);
         free_image(orig);
         free_image(sized);
