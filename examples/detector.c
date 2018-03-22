@@ -526,6 +526,13 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
     float avg_depth_err = 0;
     float avg_depth_err_cap50 = 0;
     float avg_depth_err_cap30 = 0;
+	float best_depth=0;
+	float depth_errors[100]={0};
+	float depth_errors_count[100]={0};
+	float error_dis[100]={0};
+	float threshs[3]={0};
+	float absrel=0;
+	float sqrel=0;
 
     for(i = 0; i < m; ++i){
         char *path = paths[i];
@@ -563,6 +570,7 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
                 if(probs[k][classes] > thresh && iou > best_iou){
                     best_iou = iou;
 					best_depth_err=pow(probs[k][classes+1]-truth[j].depth,2);
+					best_depth=probs[k][classes+1];
 					if(truth[j].depth>50) best_depth_err_cap50=pow((probs[k][classes+1]>50? 50:probs[k][classes+1]) - 50, 2);
 					else best_depth_err_cap50=best_depth_err;
 					if(truth[j].depth>30) best_depth_err_cap30=pow((probs[k][classes+1]>30? 30:probs[k][classes+1]) - 30, 2);
@@ -573,6 +581,17 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
 			avg_depth_err+=best_depth_err;
 			avg_depth_err_cap50+=best_depth_err_cap50;
 			avg_depth_err_cap30+=best_depth_err_cap30;
+			// statistics
+			error_dis[(int)(sqrt(best_depth_err))]++;
+			depth_errors[((int)truth[j].depth)]+=best_depth_err;
+			depth_errors_count[((int)truth[j].depth)]++;
+			float bigger_rel=truth[j].depth/best_depth>best_depth/truth[j].depth? truth[j].depth/best_depth: best_depth/truth[j].depth;
+			if(bigger_rel<1.25) threshs[0]++;
+			if(bigger_rel<1.5625) threshs[1]++;
+			if(bigger_rel<1.953125) threshs[2]++;
+			absrel+=sqrt(best_depth_err)/best_depth;
+			sqrel+=best_depth_err/best_depth;
+			
             if(best_iou > iou_thresh){
                 ++correct;
             }
@@ -583,6 +602,14 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
         free_image(orig);
         free_image(sized);
     }
+	FILE *stats=fopen("results/depth_stats.csv","w");
+	for(i=0;i<100;i++){
+		fprintf(stats ,"%d, %.3f, %.0f, %.0f\n", i, depth_errors[i]/depth_errors_count[i], depth_errors_count[i], error_dis[i]);
+	}
+	fclose(stats);
+	FILE *eval=fopen("results/evaluation.csv", "w");
+	fprintf(eval, "%f, %f, %f, %f, %f, %f, %f, %f\n", sqrt(avg_depth_err/total), sqrt(avg_depth_err_cap50/total), sqrt(avg_depth_err_cap30/total), absrel/total, sqrel/total, threshs[0]/total, threshs[1]/total, threshs[2]/total);
+	fclose(eval);
 }
 
 void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen)
