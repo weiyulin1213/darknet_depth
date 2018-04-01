@@ -260,7 +260,7 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
 	CvVideoWriter *writer;
 	char AviFileName[]="Output.avi";
     //int AviForamt = -1;
-    int FPS = 30;
+    int FPS = 24;
     CvSize AviSize = cvSize(buff[0].w,buff[0].h);
     int AviColor = 1;
     writer=cvCreateVideoWriter(AviFileName,CV_FOURCC('M', 'J', 'P', 'G'),FPS,AviSize,AviColor);
