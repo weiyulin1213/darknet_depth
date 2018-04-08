@@ -548,7 +548,8 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
         find_replace(labelpath, "JPEGImages", "labels", labelpath);
         find_replace(labelpath, ".jpg", ".txt", labelpath);
         find_replace(labelpath, ".JPEG", ".txt", labelpath);
-        find_replace(labelpath, ".png", ".txt", labelpath);
+        //find_replace(labelpath, ".png", ".txt", labelpath);
+        find_replace(labelpath, ".png", ".segtxt", labelpath);
         //find_replace(labelpath, ".png", ".ktxt", labelpath);
         find_replace(labelpath, ".PNG", ".txt", labelpath);
 
@@ -611,6 +612,14 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
 	FILE *eval=fopen("results/evaluation.csv", "w");
 	fprintf(eval, "%f, %f, %f, %f, %f, %f, %f, %f\n", sqrt(avg_depth_err/total), sqrt(avg_depth_err_cap50/total), sqrt(avg_depth_err_cap30/total), absrel/total, sqrel/total, threshs[0]/total, threshs[1]/total, threshs[2]/total);
 	fclose(eval);
+}
+
+void write_weights(char *datacfg, char *cfgfile, char *weightfile)
+{
+    list *options = read_data_cfg(datacfg);
+
+    network *net = load_network(cfgfile, weightfile, 0);
+	save_weights_interactive(net, "output.weights");
 }
 
 void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen)
@@ -769,6 +778,7 @@ void run_detector(int argc, char **argv)
     char *weights = (argc > 5) ? argv[5] : 0;
     char *filename = (argc > 6) ? argv[6]: 0;
     if(0==strcmp(argv[2], "test")) test_detector(datacfg, cfg, weights, filename, thresh, hier_thresh, outfile, fullscreen);
+    if(0==strcmp(argv[2], "write")) write_weights(datacfg, cfg, weights);
     else if(0==strcmp(argv[2], "train")) train_detector(datacfg, cfg, weights, gpus, ngpus, clear);
     else if(0==strcmp(argv[2], "valid")) validate_detector(datacfg, cfg, weights, outfile);
     else if(0==strcmp(argv[2], "valid2")) validate_detector_flip(datacfg, cfg, weights, outfile);

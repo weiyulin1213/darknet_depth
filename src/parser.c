@@ -892,6 +892,86 @@ void save_connected_weights(layer l, FILE *fp)
     }
 }
 
+
+void save_weights_interactive(network *net, char *filename)
+{
+#ifdef GPU
+    if(net->gpu_index >= 0){
+        cuda_set_device(net->gpu_index);
+    }
+#endif
+    fprintf(stderr, "Saving weights to %s\n", filename);
+    FILE *fp = fopen(filename, "wb");
+    if(!fp) file_error(filename);
+
+    int major = 0;
+    int minor = 2;
+    int revision = 0;
+    fwrite(&major, sizeof(int), 1, fp);
+    fwrite(&minor, sizeof(int), 1, fp);
+    fwrite(&revision, sizeof(int), 1, fp);
+    fwrite(net->seen, sizeof(size_t), 1, fp);
+
+    int i;
+    while(scanf("%d", &i)!=EOF){
+		if(i<0 || i>=net->n){
+			printf("Invalid layer!\n");
+			continue;
+		}
+        layer l = net->layers[i];
+        if(l.type == CONVOLUTIONAL || l.type == DECONVOLUTIONAL){
+            save_convolutional_weights(l, fp);
+        } if(l.type == CONNECTED){
+            save_connected_weights(l, fp);
+        } if(l.type == BATCHNORM){
+            save_batchnorm_weights(l, fp);
+        } if(l.type == RNN){
+            save_connected_weights(*(l.input_layer), fp);
+            save_connected_weights(*(l.self_layer), fp);
+            save_connected_weights(*(l.output_layer), fp);
+        } if (l.type == LSTM) {
+            save_connected_weights(*(l.wi), fp);
+            save_connected_weights(*(l.wf), fp);
+            save_connected_weights(*(l.wo), fp);
+            save_connected_weights(*(l.wg), fp);
+            save_connected_weights(*(l.ui), fp);
+            save_connected_weights(*(l.uf), fp);
+            save_connected_weights(*(l.uo), fp);
+            save_connected_weights(*(l.ug), fp);
+        } if (l.type == GRU) {
+            if(1){
+                save_connected_weights(*(l.wz), fp);
+                save_connected_weights(*(l.wr), fp);
+                save_connected_weights(*(l.wh), fp);
+                save_connected_weights(*(l.uz), fp);
+                save_connected_weights(*(l.ur), fp);
+                save_connected_weights(*(l.uh), fp);
+            }else{
+                save_connected_weights(*(l.reset_layer), fp);
+                save_connected_weights(*(l.update_layer), fp);
+                save_connected_weights(*(l.state_layer), fp);
+            }
+        }  if(l.type == CRNN){
+            save_convolutional_weights(*(l.input_layer), fp);
+            save_convolutional_weights(*(l.self_layer), fp);
+            save_convolutional_weights(*(l.output_layer), fp);
+        } if(l.type == LOCAL){
+#ifdef GPU
+            if(gpu_index >= 0){
+                pull_local_layer(l);
+            }
+#endif
+            int locations = l.out_w*l.out_h;
+            int size = l.size*l.size*l.c*l.n*locations;
+            fwrite(l.biases, sizeof(float), l.outputs, fp);
+            fwrite(l.weights, sizeof(float), size, fp);
+        }
+		fprintf(stderr, "write layer done.\n");
+    }
+    fclose(fp);
+    fprintf(stderr, "Saving weights: %s done.\n", filename);
+}
+
 void save_weights_upto(network *net, char *filename, int cutoff)
 {
 #ifdef GPU
